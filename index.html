@@ -2,51 +2,58 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>AI 마피아 게임 - 채팅 모드</title>
+    <title>AI 마피아 PRO - 실감나는 심리전</title>
     <style>
-        :root { --bg-color: #1a1a1a; --card-bg: #2d2d2d; --text: #e0e0e0; --accent: #e74c3c; --chat-ai: #3498db; --chat-me: #f1c40f; }
-        body { background-color: var(--bg-color); color: var(--text); font-family: 'Pretendard', sans-serif; display: flex; justify-content: center; padding: 20px; margin: 0; }
-        .container { width: 1000px; display: grid; grid-template-columns: 1fr 350px; gap: 20px; }
+        :root { --bg: #121212; --card: #1e1e1e; --text: #eee; --mafia: #ff4d4d; --police: #3498db; --doc: #2ecc71; --user: #f1c40f; }
+        body { background: var(--bg); color: var(--text); font-family: 'Pretendard', sans-serif; margin: 0; display: flex; justify-content: center; height: 100vh; overflow: hidden; }
+        .game-wrapper { display: flex; width: 1100px; gap: 20px; padding: 20px; box-sizing: border-box; }
         
-        /* 플레이어 리스트 */
+        /* 왼쪽: 플레이어 영역 */
+        .main-panel { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+        .phase-header { background: var(--card); padding: 15px; border-radius: 12px; text-align: center; font-size: 22px; font-weight: bold; border-bottom: 4px solid var(--mafia); }
         .player-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
-        .player-card { background: var(--card-bg); padding: 15px; border-radius: 10px; text-align: center; border: 2px solid transparent; transition: 0.3s; position: relative; }
-        .player-card.alive { cursor: pointer; }
-        .player-card.dead { opacity: 0.5; background: #111; text-decoration: line-through; }
-        .player-card.selected { border-color: var(--accent); transform: translateY(-5px); }
-        .role-tag { font-size: 12px; padding: 2px 6px; border-radius: 4px; background: #444; margin-top: 5px; display: inline-block; }
+        .player-card { background: var(--card); padding: 15px; border-radius: 12px; text-align: center; border: 2px solid transparent; transition: 0.3s; position: relative; }
+        .player-card.alive { cursor: pointer; border-color: #333; }
+        .player-card.selected { border-color: var(--user); box-shadow: 0 0 15px var(--user); }
+        .player-card.dead { opacity: 0.4; filter: grayscale(1); }
+        .role-badge { font-size: 11px; padding: 3px 8px; border-radius: 20px; background: #444; margin-top: 8px; display: inline-block; }
 
-        /* 채팅 로그 */
-        .sidebar { display: flex; flex-direction: column; gap: 15px; }
-        #log { background: #000; height: 500px; padding: 15px; border-radius: 10px; overflow-y: auto; font-size: 14px; line-height: 1.6; border: 1px solid #333; display: flex; flex-direction: column; gap: 8px; }
-        .msg { border-radius: 5px; padding: 5px 10px; max-width: 90%; }
-        .msg.system { background: #333; color: #aaa; align-self: center; font-size: 12px; }
-        .msg.ai { background: #2c3e50; align-self: flex-start; border-left: 3px solid var(--chat-ai); }
-        .msg.me { background: #3e3e2c; align-self: flex-end; border-right: 3px solid var(--chat-me); }
-        .msg b { color: #fff; }
+        /* 오른쪽: 채팅 및 로그 영역 */
+        .side-panel { width: 400px; display: flex; flex-direction: column; gap: 15px; }
+        #chat-log { flex: 1; background: #000; border-radius: 12px; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; border: 1px solid #333; }
+        
+        .msg { padding: 8px 12px; border-radius: 8px; max-width: 85%; font-size: 14px; line-height: 1.5; }
+        .msg.system { background: #222; color: #bbb; align-self: center; text-align: center; width: 90%; font-size: 12px; }
+        .msg.ai { background: #2c3e50; align-self: flex-start; border-left: 4px solid var(--police); }
+        .msg.me { background: #3e3e2c; align-self: flex-end; border-right: 4px solid var(--user); }
+        .msg b { display: block; font-size: 11px; margin-bottom: 2px; color: #aaa; }
 
-        .controls { background: var(--card-bg); padding: 20px; border-radius: 10px; text-align: center; }
-        button { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 5px; }
-        button:disabled { background: #555; cursor: not-allowed; }
+        .input-area { display: flex; gap: 8px; background: var(--card); padding: 10px; border-radius: 12px; }
+        #chat-input { flex: 1; background: #000; border: 1px solid #444; color: #fff; padding: 8px; border-radius: 6px; outline: none; }
+        #send-btn { background: var(--user); color: #000; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; }
 
-        .phase-indicator { font-size: 24px; font-weight: bold; margin-bottom: 10px; color: var(--accent); text-align: center; }
-        .night { color: #9b59b6; }
+        .vote-summary { background: #222; border: 1px dashed #555; padding: 10px; border-radius: 8px; font-size: 13px; margin-top: 5px; color: #ffcc00; }
+        
+        button.action-btn { background: var(--mafia); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; }
+        button:disabled { background: #444; cursor: not-allowed; }
     </style>
 </head>
 <body>
 
-<div class="container">
+<div class="game-wrapper">
     <div class="main-panel">
-        <div id="phase-text" class="phase-indicator">게임 시작 대기 중</div>
+        <div id="phase-text" class="phase-header">마피아 게임 PRO</div>
         <div class="player-grid" id="player-grid"></div>
+        <div id="vote-result-area"></div>
     </div>
 
-    <div class="sidebar">
-        <div id="log"></div>
-        <div class="controls">
-            <div id="instruction" style="margin-bottom: 10px;">환영합니다!</div>
-            <button id="action-btn" onclick="initGame()">게임 시작</button>
+    <div class="side-panel">
+        <div id="chat-log"></div>
+        <div class="input-area">
+            <input type="text" id="chat-input" placeholder="메시지를 입력하세요..." onkeypress="if(event.keyCode==13) sendMessage()">
+            <button id="send-btn" onclick="sendMessage()">전송</button>
         </div>
+        <button id="next-btn" class="action-btn" onclick="initGame()">게임 시작</button>
     </div>
 </div>
 
@@ -56,243 +63,122 @@
     
     let players = [];
     let currentPhase = PHASES.READY;
-    let myIndex = 0;
-    let selectedPlayer = null;
     let dayCount = 1;
-    let chatTimers = [];
+    let selectedPlayer = null;
+    let myIndex = 0;
 
-    const logEl = document.getElementById('log');
-    const phaseEl = document.getElementById('phase-text');
-    const instructionEl = document.getElementById('instruction');
-    const actionBtn = document.getElementById('action-btn');
+    // AI 대사 데이터
+    const AI_PHRASES = {
+        suspicion: ["번이 아까부터 너무 조용한데?", "번 마피아 같지 않음?", "난 번이 제일 의심스러워.", "번 행동이 좀 이상한데?"],
+        defense: ["저 시민이에요 진짜로!", "저 죽이면 시민 손해입니다.", "아니 왜 저를 의심하시죠?", "진짜 억울해요..."],
+        policeClaim: ["저 경찰인데 번 조사하니까 마피아 뜸!", "저 경찰임. 번 시민입니다.", "경찰 조사 결과 기다려보죠."],
+        agree: ["오, 그럴듯한데?", "인정. 번 투표합시다.", "저도 번이 의심되긴 했어요."]
+    };
 
-    // 채팅 관련 문구 풀
-    const chatPool = [
-        "누가 마피아지? 진짜 모르겠네.",
-        "전 그냥 선량한 시민입니다. 진짜로요.",
-        "경찰분들 조사 결과 나온 거 없나요?",
-        "방금 죽은 사람 보니까 마피아가 노련한데?",
-        "저는 왠지 [TARGET]번이 수상해 보여요.",
-        "[TARGET]번, 왜 아무 말이 없으세요?",
-        "전 이번에 무조건 [TARGET]번 투표하겠습니다.",
-        "아니에요, 전 시민이라니까요!",
-        "의사님 저 좀 살려주세요. 무서워요.",
-        "지금 조용히 있는 사람이 범인 아닐까요?"
-    ];
-
-    function addLog(msg, type = 'system', sender = '') {
+    function addMsg(text, type = 'system', sender = '') {
+        const log = document.getElementById('chat-log');
         const div = document.createElement('div');
         div.className = `msg ${type}`;
-        if (sender) {
-            div.innerHTML = `<b>[${sender}]</b>: ${msg}`;
-        } else {
-            div.innerHTML = msg;
-        }
-        logEl.appendChild(div);
-        logEl.scrollTop = logEl.scrollHeight;
+        if(sender) div.innerHTML = `<b>${sender}</b>${text}`;
+        else div.innerHTML = text;
+        log.appendChild(div);
+        log.scrollTop = log.scrollHeight;
     }
 
     function initGame() {
-        chatTimers.forEach(t => clearTimeout(t));
-        const rolePool = [ROLES.MAFIA, ROLES.POLICE, ROLES.DOCTOR, ROLES.CITIZEN, ROLES.CITIZEN, ROLES.CITIZEN];
-        const shuffled = rolePool.sort(() => Math.random() - 0.5);
-        
-        players = shuffled.map((role, i) => ({
-            id: i + 1,
-            role: role,
-            isAlive: true,
-            isAI: i !== 0,
-            name: i === 0 ? "나" : `플레이어 ${i + 1}`
+        const rolePool = [ROLES.MAFIA, ROLES.POLICE, ROLES.DOCTOR, ROLES.CITIZEN, ROLES.CITIZEN, ROLES.CITIZEN].sort(() => Math.random() - 0.5);
+        players = rolePool.map((role, i) => ({
+            id: i + 1, name: i === 0 ? "나" : `플레이어 ${i + 1}`,
+            role: role, isAlive: true, isAI: i !== 0
         }));
-
-        currentPhase = PHASES.READY;
         dayCount = 1;
-        logEl.innerHTML = '';
-        addLog("게임이 시작되었습니다! 당신의 직업은 <b>[" + players[myIndex].role + "]</b>입니다.", "system");
-        
+        document.getElementById('chat-log').innerHTML = '';
+        document.getElementById('vote-result-area').innerHTML = '';
+        addMsg(`게임 시작! 당신의 직업은 [${players[myIndex].role}]입니다.`, 'system');
         startNight();
     }
 
-    function renderPlayers() {
+    function render() {
         const grid = document.getElementById('player-grid');
         grid.innerHTML = '';
         players.forEach((p, i) => {
             const card = document.createElement('div');
             card.className = `player-card ${p.isAlive ? 'alive' : 'dead'} ${selectedPlayer === i ? 'selected' : ''}`;
-            let roleInfo = (i === myIndex || !p.isAlive) ? `<div class="role-tag">${p.role}</div>` : '';
-            card.innerHTML = `<div style="font-size: 40px">${p.isAlive ? '👤' : '💀'}</div><div>${p.name}</div>${roleInfo}`;
-            if (p.isAlive && currentPhase !== PHASES.READY) card.onclick = () => selectPlayer(i);
+            let info = (i === myIndex || !p.isAlive) ? `<div class="role-badge">${p.role}</div>` : '';
+            card.innerHTML = `<div style="font-size:30px">${p.isAlive?'👤':'💀'}</div><b>${p.name}</b>${info}`;
+            if(p.isAlive && currentPhase !== PHASES.READY) card.onclick = () => { selectedPlayer = i; render(); };
             grid.appendChild(card);
         });
     }
 
-    function selectPlayer(index) {
-        if (!players[index].isAlive) return;
-        selectedPlayer = index;
-        renderPlayers();
-    }
-
-    // --- 밤 페이즈 ---
     function startNight() {
         currentPhase = PHASES.NIGHT;
         selectedPlayer = null;
-        phaseEl.innerText = `제 ${dayCount}일 - 밤`;
-        phaseEl.className = "phase-indicator night";
-        renderPlayers();
-
-        if (!players[myIndex].isAlive) {
-            addLog("당신은 사망했습니다. 상황을 지켜봅니다.");
-            setTimeout(processNight, 2000);
-            return;
-        }
-
-        instructionEl.innerText = `${players[myIndex].role}의 능력을 사용하세요.`;
-        actionBtn.disabled = false;
-        actionBtn.innerText = (players[myIndex].role === ROLES.CITIZEN) ? "밤 넘기기" : "능력 사용";
-        actionBtn.onclick = useAbility;
-    }
-
-    function useAbility() {
-        if (players[myIndex].role !== ROLES.CITIZEN && selectedPlayer === null) {
-            alert("대상을 선택하세요!"); return;
-        }
-        processNight();
+        document.getElementById('phase-text').innerText = `제 ${dayCount}일 - 밤`;
+        document.getElementById('chat-input').disabled = true;
+        render();
+        
+        const btn = document.getElementById('next-btn');
+        btn.innerText = players[myIndex].role === ROLES.CITIZEN ? "밤 넘기기" : "능력 사용";
+        btn.onclick = processNight;
     }
 
     function processNight() {
+        if(players[myIndex].isAlive && players[myIndex].role !== ROLES.CITIZEN && selectedPlayer === null) {
+            alert("능력을 사용할 대상을 선택하세요!"); return;
+        }
+
         let mafiaTarget = -1, doctorTarget = -1, policeTarget = -1;
         players.forEach((p, i) => {
-            if (!p.isAlive) return;
-            const aliveOthers = players.map((_, idx) => idx).filter(idx => players[idx].isAlive && idx !== i);
-            const randomTarget = aliveOthers[Math.floor(Math.random() * aliveOthers.length)];
+            if(!p.isAlive) return;
+            const targets = players.map((_,idx)=>idx).filter(idx => players[idx].isAlive && idx !== i);
+            const rnd = targets[Math.floor(Math.random()*targets.length)];
 
-            if (p.role === ROLES.MAFIA) mafiaTarget = p.isAI ? randomTarget : selectedPlayer;
-            if (p.role === ROLES.DOCTOR) doctorTarget = p.isAI ? randomTarget : selectedPlayer;
-            if (p.role === ROLES.POLICE) policeTarget = p.isAI ? randomTarget : selectedPlayer;
+            if(p.role === ROLES.MAFIA) mafiaTarget = p.isAI ? rnd : selectedPlayer;
+            if(p.role === ROLES.DOCTOR) doctorTarget = p.isAI ? rnd : selectedPlayer;
+            if(p.role === ROLES.POLICE) policeTarget = p.isAI ? rnd : selectedPlayer;
         });
 
-        if (players[myIndex].role === ROLES.POLICE && players[myIndex].isAlive) {
-            const isMafia = players[policeTarget].role === ROLES.MAFIA;
-            addLog(`경찰 조사 결과: ${players[policeTarget].name}은(는) <b>${isMafia ? '마피아' : '시민'}</b>입니다.`);
+        if(players[myIndex].role === ROLES.POLICE && players[myIndex].isAlive) {
+            const isM = players[policeTarget].role === ROLES.MAFIA;
+            addMsg(`${players[policeTarget].name}은(는) [${isM?'마피아':'시민'}]입니다.`, 'system');
         }
 
-        let deadPlayer = (mafiaTarget !== -1 && mafiaTarget !== doctorTarget) ? mafiaTarget : -1;
-        if (deadPlayer !== -1) players[deadPlayer].isAlive = false;
+        let dead = (mafiaTarget !== -1 && mafiaTarget !== doctorTarget) ? mafiaTarget : -1;
+        if(dead !== -1) players[dead].isAlive = false;
 
-        startDay(deadPlayer);
+        startDay(dead);
     }
 
-    // --- 낮 페이즈 (채팅 포함) ---
     function startDay(deadIdx) {
         currentPhase = PHASES.DAY_CHAT;
-        phaseEl.innerText = `제 ${dayCount}일 - 낮 (토론)`;
-        phaseEl.className = "phase-indicator";
-        renderPlayers();
+        document.getElementById('phase-text').innerText = `제 ${dayCount}일 - 낮 (토론)`;
+        document.getElementById('chat-input').disabled = false;
+        document.getElementById('vote-result-area').innerHTML = '';
+        render();
 
-        addLog(`--- 제 ${dayCount}일 낮이 밝았습니다 ---`, "system");
-        if (deadIdx === -1) addLog("지난밤엔 아무 일도 없었습니다.");
-        else addLog(`지난밤 <b>${players[deadIdx].name}</b>이(가) 살해당했습니다.`, "system");
+        addMsg(`--- 제 ${dayCount}일 낮이 밝았습니다 ---`, 'system');
+        addMsg(deadIdx === -1 ? "지난밤엔 아무도 죽지 않았습니다." : `지난밤 [${players[deadIdx].name}]이 살해당했습니다.`, 'system');
 
-        if (checkGameOver()) return;
+        if(checkEnd()) return;
 
-        instructionEl.innerText = "AI들이 토론 중입니다...";
-        actionBtn.disabled = true;
-        actionBtn.innerText = "토론 대기 중";
+        const btn = document.getElementById('next-btn');
+        btn.innerText = "투표 시작";
+        btn.onclick = startVote;
 
-        // AI 가짜 채팅 생성
-        generateAIChats();
+        // AI 자동 채팅 시작
+        let chatCount = 0;
+        const interval = setInterval(() => {
+            if(currentPhase !== PHASES.DAY_CHAT || chatCount > 3) { clearInterval(interval); return; }
+            aiTalk();
+            chatCount++;
+        }, 3000);
     }
 
-    function generateAIChats() {
+    function aiTalk(forceTarget = null, forceType = null) {
         const aliveAIs = players.filter(p => p.isAlive && p.isAI);
-        const chatCount = 4 + Math.floor(Math.random() * 3); // 4~6개의 채팅 생성
-
-        for (let i = 0; i < chatCount; i++) {
-            const timer = setTimeout(() => {
-                const talker = aliveAIs[Math.floor(Math.random() * aliveAIs.length)];
-                if (!talker || currentPhase !== PHASES.DAY_CHAT) return;
-
-                let msg = chatPool[Math.floor(Math.random() * chatPool.length)];
-                const aliveOthers = players.filter(p => p.isAlive && p.name !== talker.name);
-                const target = aliveOthers[Math.floor(Math.random() * aliveOthers.length)];
-                msg = msg.replace("[TARGET]", target.id);
-
-                addLog(msg, "ai", talker.name);
-
-                if (i === chatCount - 1) {
-                    instructionEl.innerText = "토론 종료. 투표를 시작하세요.";
-                    actionBtn.disabled = false;
-                    actionBtn.innerText = "투표하기";
-                    actionBtn.onclick = startVoting;
-                }
-            }, (i + 1) * 1500); // 1.5초 간격으로 채팅
-            chatTimers.push(timer);
-        }
-    }
-
-    function startVoting() {
-        currentPhase = PHASES.DAY_VOTE;
-        selectedPlayer = null;
-        renderPlayers();
-        addLog("투표가 시작되었습니다.", "system");
-        instructionEl.innerText = "마피아를 골라 투표하세요.";
-        actionBtn.onclick = processVote;
-    }
-
-    function processVote() {
-        if (players[myIndex].isAlive && selectedPlayer === null) {
-            alert("투표 대상을 선택하세요!"); return;
-        }
-
-        let votes = new Array(players.length).fill(0);
-        players.forEach((p, i) => {
-            if (!p.isAlive) return;
-            let target;
-            if (p.isAI) {
-                const aliveOnes = players.map((p, idx) => p.isAlive ? idx : -1).filter(idx => idx !== -1);
-                target = aliveOnes[Math.floor(Math.random() * aliveOnes.length)];
-            } else target = selectedPlayer;
-            votes[target]++;
-        });
-
-        let maxVote = Math.max(...votes);
-        let candidates = votes.map((v, i) => v === maxVote ? i : -1).filter(i => i !== -1);
+        if(aliveAIs.length === 0) return;
+        const talker = aliveAIs[Math.floor(Math.random()*aliveAIs.length)];
         
-        if (candidates.length > 1) addLog("동점자가 발생하여 아무도 처형되지 않았습니다.");
-        else {
-            let executed = candidates[0];
-            players[executed].isAlive = false;
-            addLog(`투표 결과 <b>${players[executed].name}</b> 처형. 정체는 [${players[executed].role}]!`);
-        }
-
-        renderPlayers();
-        if (checkGameOver()) return;
-
-        dayCount++;
-        actionBtn.innerText = "밤으로 가기";
-        actionBtn.onclick = startNight;
-    }
-
-    function checkGameOver() {
-        const mafiaCount = players.filter(p => p.isAlive && p.role === ROLES.MAFIA).length;
-        const citizenCount = players.filter(p => p.isAlive && p.role !== ROLES.MAFIA).length;
-
-        if (mafiaCount === 0) { endGame("시민 승리!"); return true; }
-        if (mafiaCount >= citizenCount) { endGame("마피아 승리!"); return true; }
-        return false;
-    }
-
-    function endGame(msg) {
-        currentPhase = PHASES.READY;
-        phaseEl.innerText = "게임 종료";
-        addLog(`🏆 ${msg}`, "system");
-        instructionEl.innerText = "다시 하시겠습니까?";
-        actionBtn.disabled = false;
-        actionBtn.innerText = "재시작";
-        actionBtn.onclick = initGame;
-        renderPlayers();
-    }
-</script>
-
-</body>
-</html>
+        let type = forceType || (Math.random() > 0.7 ? 'defense' : 'suspicion');
+        let msg = AI_PH
